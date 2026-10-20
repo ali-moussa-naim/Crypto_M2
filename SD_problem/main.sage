@@ -4,6 +4,9 @@ from sage.all_cmdline import *   # import sage library
 _sage_const_1 = Integer(1)
 import random
 
+# https://veron.univ-tln.fr/M2/sd/
+# Pour vérifier les programmes
+
 """
 Fonction qui génère une matrice de taille n * k à partir de H
 H : matrice de taille n * k
@@ -11,7 +14,6 @@ n : entier, nombre de lignes
 k : entier, nmobre de colonnes
 """
 def gen_M(H, n, k):
-    set_random_seed(42)
 
     # On choisit les (n-k) colonnes à swap
     list_colonne = list(range(n))
@@ -19,13 +21,13 @@ def gen_M(H, n, k):
     limite = n - k
     list_colonne = list_colonne[:limite]
 
-    # Initialisation de la matrice H'
+    # Initialisation de la matrice M
     M = matrix(GF(2), limite, limite, 0)
     
     for i in range(limite):
-        M.set_column(i, H.column(i))
+        M.set_column(i, H.column(list_colonne[i]))
 
-    return M
+    return M, list_colonne
 
 """
 Fonction qui ajoute s à droite de M
@@ -47,20 +49,60 @@ def echelon_M_S(M, s):
 
 """
 Fonction qui réitère l'expérience jusqu'à ce que M soit inversible
+H : matrice, taille (n - k) * n
+n : entier
+k : entier
+s : liste
 """
 def verif_M(H, n, k, s):
-    M = gen_M(H, n, k)
+    M, list_colonne = gen_M(H, n, k)
     M = echelon_M_S(M, s)
 
     while(M == None):
-        M = gen_M(H, n, k)
+        M, list_colonne = gen_M(H, n, k)
         M = echelon_M_S(M, s)
     
-    l, c = M.dimensions()
-    indice = l - c 
-    
-    return M.row(indice)
+    return M, list_colonne
 
+"""
+Fonction qui caclcule le poids d'un vecteur
+s : liste, le syndrome
+"""
+def poids_hamming(s):
+    return s.hamming_weight()
+
+"""
+Fonction qui réitère l'expérience tant que le poids Hamming de s <= t et renvoie e
+H : matrice n * k
+n : entier, ligne de la matrice
+k : entier, colonne de la matrice
+s : vecteur, syndrome
+t : entier, nombre limite d'erreur
+"""
+def SD_problem(H, n, k, s, t):
+    M, list_colonne = verif_M(H, n, k, s)
+
+    # On continue tant que le poids Hamming de s > t
+    s = M.column(n - k)
+    while(poids_hamming(s) > t):
+        M, list_colonne = verif_M(H, n, k, s)
+        s = M.column(n - k)
+    
+    # On refait la matrice de permutation 
+    limite = n - k
+    P = matrix(GF(2), limite, limite, 0)
+
+    for i in range(limite):
+        P.set_column(i, H.column(list_colonne[i]))
+
+    # On calcule la transpose de la matrice de permutation
+    P = P.transpose()
+
+    # On calcule le résultat final
+    e = s * P
+
+    return e
+    
 
 H = [[0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1], [0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1], [0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1], [0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1], [1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0], [1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1], [1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1], [0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1], [0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0], [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0], [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0], [0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1], [0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1], [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0], [0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0]]
 H = matrix(GF(2), H)
@@ -73,7 +115,6 @@ t = 3
 M = gen_M(H, n, k)
 
 
-print(M)
 """
 print(list_perm)    
 """
@@ -82,8 +123,13 @@ print("\n")
 """M_S = echelon_M_S(M, syndrome)
 print(M_S)"""
 
-M = verif_M(H, n, k, syndrome)
+"""
+s_prime = verif_M(H, n, k, syndrome)
 print("\n")
-print(M)
+print(s_prime)
+print(s_prime.column(n - k))
+print(poids_hamming(s_prime.column(n - k)))
+"""
 
-
+P = SD_problem(H, n, k, syndrome, t)
+print(P)
