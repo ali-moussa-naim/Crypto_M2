@@ -2,34 +2,88 @@
 from sage.all_cmdline import *   # import sage library
 
 _sage_const_1 = Integer(1)
-import sage.misc.prandom as prandom
+import random
 
 """
-Fonction qui génère une matrice de taille (n - k) * n à partir de H
-H : matrice de taille (n - k) * n
+Fonction qui génère une matrice de taille n * k à partir de H
+H : matrice de taille n * k
 n : entier, nombre de lignes
-k : entier
+k : entier, nmobre de colonnes
 """
-def gen_H_prime(H, n, k):
+def gen_M(H, n, k):
+    set_random_seed(42)
 
     # On choisit les (n-k) colonnes à swap
     list_colonne = list(range(n))
-    prandom.shuffle(list_colonne)
+    random.shuffle(list_colonne)
     limite = n - k
     list_colonne = list_colonne[:limite]
 
+    # Initialisation de la matrice H'
+    M = matrix(GF(2), limite, limite, 0)
+    
     for i in range(limite):
-        colonne_swap = list_colonne[i]
-        H[i], H[colonne_swap] = H[colonne_swap], H[i]
+        M.set_column(i, H.column(i))
 
-    return H
+    return M
+
+"""
+Fonction qui ajoute s à droite de M
+M : matrice taille (n - k) * (n - k)
+s : vecteur de taille (n - k)
+"""
+def echelon_M_S(M, s):
+    S = vector(s)  
+    M = M.augment(S.column())
+    M = M.echelon_form()
+
+    # Lève l'exception
+    l, c = M.dimensions()
+    indice = l - c 
+    if(M.row(indice).is_zero()):
+        return None
+
+    return M
+
+"""
+Fonction qui réitère l'expérience jusqu'à ce que M soit inversible
+"""
+def verif_M(H, n, k, s):
+    M = gen_M(H, n, k)
+    M = echelon_M_S(M, s)
+
+    while(M == None):
+        M = gen_M(H, n, k)
+        M = echelon_M_S(M, s)
+    
+    l, c = M.dimensions()
+    indice = l - c 
+    
+    return M.row(indice)
+
 
 H = [[0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1], [0, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1], [0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1], [0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1], [1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0], [1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1], [1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1], [0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1], [0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0], [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0], [1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0], [0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1], [0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0], [0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1], [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0], [0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0]]
+H = matrix(GF(2), H)
+syndrome = [0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0]
 n = 32
 k = 16
+t = 3
 
-H_prime = gen_H_prime(H, n, k)
-print(H_prime)
-    
+
+M = gen_M(H, n, k)
+
+
+print(M)
+"""
+print(list_perm)    
+"""
+print("\n")
+
+"""M_S = echelon_M_S(M, syndrome)
+print(M_S)"""
+
+M = verif_M(H, n, k, syndrome)
+print("\n")
+print(M)
 
 
