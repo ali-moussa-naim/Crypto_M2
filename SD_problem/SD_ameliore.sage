@@ -30,6 +30,7 @@ Q : matrice taille (n - k) * k
 def echelon_M_S(M, Q, s):
     # On vérifie si M inversible
     if not M.is_invertible():
+        print("La matrice M n'est pas inversible")
         return None
 
     # On applique les opérations de Gauss à M, Q et s
@@ -150,6 +151,7 @@ p = 2
 H = matrix(GF(2), H)
 s = vector(GF(2), syndrome)
 
+# On répète l'algo tant que l'on a pas trouvé e
 e = None
 while(e == None):
     e = rech_e(H, n, k, s, p, t)
