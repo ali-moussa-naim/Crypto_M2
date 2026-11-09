@@ -7,10 +7,11 @@ def compute_synd(c):
         print("Le mot c et la Liste L doivent avoir la même taille")
         return None
 
-    res = 0
+    res = P(0)
     for i in range(len(L)):
-        alpha_i = L[i]
-        res += (c[i] / g2(alpha_i)) * ((g2(z) - g2(alpha_i)) / (z - alpha_i))
+        if(c[i] != 0):
+            alpha_i = L[i]
+            res += (c[i] / g2(alpha_i)) * ((g2(z) - g2(alpha_i)) // (z - alpha_i))
 
     return res
 
@@ -41,18 +42,22 @@ def rebuild_err(loc,n):
 # resolution l'equation cle des codes de goppa
 # et renvoie le polynome localisateur
 def solve_eq(g,s,t):
-    u1, v1 = 1, 0
-    u2, v2 = 0, 1
+    # Si syndrome nul
+    if(s == 0):
+        return P(1)
+    
+    u1, v1 = P(1), P(0)
+    u2, v2 = P(0), P(1)
     a, b = s, g
 
-    while((u2.degree <= t) and (b.degree() <= (t - 1))):
+    while(b.degree() >= t):
         q, r = a.quo_rem(b)
-        u1, u2 = u2, u1 - q * u1
+        u1, u2 = u2, u1 - q * u2
         v1, v2 = v2, v1 - q * v2
 
         a, b = b, r
 
-    return u1
+    return u2
 
 # renvoie le mot de code C
 # associe à m
@@ -88,25 +93,4 @@ for cpt in range(10):
     erreur = rebuild_err(loc,C.length())
     print(cpt,':',erreur == e)
 
-"""
-
-#--------------------------------------------------TEST--------------------------------------------------------#
-m = MS.random_element()
-c = encode(m)
-print(c)
-
-print("\n")
-
-Se = compute_synd(c)
-print(Se)
-
-print("\n")
-
-n = 10
-t = 4
-err = gen_err(n, t)
-print("Mot erreur:", err)
-
-
-"""
 
